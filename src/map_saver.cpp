@@ -71,20 +71,28 @@ class MapGenerator
 
       fprintf(out, "P5\n# CREATOR: map_saver.cpp %.3f m/pix\n%d %d\n255\n",
               map->info.resolution, map->info.width, map->info.height);
+      double min_data{255};
+      double max_data{0};
+
       for(unsigned int y = 0; y < map->info.height; y++) {
         for(unsigned int x = 0; x < map->info.width; x++) {
           unsigned int i = x + (map->info.height - y - 1) * map->info.width;
-          if (map->data[i] >= 0 && map->data[i] <= threshold_free_) { // [0,free)
-            fputc(254, out);
-          } else if (map->data[i] >= threshold_occupied_) { // (occ,255]
-            fputc(000, out);
-          } else { //occ [0.25,0.65]
-            fputc(205, out);
-          }
+          fputc(map->data[i], out);
+          if (map->data[i] > max_data)
+            max_data = map->data[i] * 2.55;;
+          if (map->data[i] < min_data)
+            min_data = map->data[i] * 2.55;;
+          //   fputc(254, out);
+          // } else if (map->data[i] >= threshold_occupied_) { // (occ,255]
+          //   fputc(000, out);
+          // } else { //occ [0.25,0.65]
+          //   fputc(205, out);
+          // }
         }
       }
 
       fclose(out);
+      ROS_INFO("Map min and max data %f, %f", min_data, max_data);
 
 
       std::string mapmetadatafile = mapname_ + ".yaml";
@@ -112,7 +120,7 @@ free_thresh: 0.196
       double yaw, pitch, roll;
       mat.getEulerYPR(yaw, pitch, roll);
 
-      fprintf(yaml, "image: %s\nresolution: %f\norigin: [%f, %f, %f]\nnegate: 0\noccupied_thresh: 0.65\nfree_thresh: 0.196\n\n",
+      fprintf(yaml, "image: %s\nresolution: %f\norigin: [%f, %f, %f]\nnegate: 0\noccupied_thresh: 0.65\nfree_thresh: 0.196\nmode: raw\n\n",
               mapdatafile.c_str(), map->info.resolution, map->info.origin.position.x, map->info.origin.position.y, yaw);
 
       fclose(yaml);
